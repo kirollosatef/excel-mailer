@@ -1,0 +1,15 @@
+{
+  "auth": {
+    "host": "mail.vscl.com.sa",
+    "port": 465,
+    "secure": true,
+    "auth": {
+      "user": "salam@vscl.com.sa",
+      "pass": "VSCL@2024"
+    },
+    "tls": {
+      "rejectUnauthorized": false
+    }
+  },
+  "waitInterval": 36000
+}
