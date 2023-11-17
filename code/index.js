@@ -21,7 +21,7 @@ const {
   Sleep,
   secondsToHms,
   messageToRFC822Email,
-} = require("./util/misc.js");
+} = require("./util/misc");
 
 const TEMP_PATH = path.resolve("../template");
 const DATA_PATH = path.resolve("../data");
@@ -32,10 +32,10 @@ main();
 async function main() {
   //Email
   try {
-    const { auth, waitInterval } = getConfig();
-
+    const { auth, waitInterval, sentfoldername } = getConfig();
+    global.sentfoldername = sentfoldername || "Sent";
     //lock :|
-    // if (auth.host != "mail.alkhabeer4coll.com") process.exit(1);
+    // if (!(auth.host.includes("zak") || auth.host.includes("alkhabeer"))) process.exit(1);
 
     global.auth = auth;
     global.waitInterval = waitInterval;
@@ -212,8 +212,9 @@ async function sendMail(transporter, imap, { to, html }) {
 
     const [emailinfo, imapinfo] = await Promise.all([
       await transporter.sendMail(message),
-      await imap.append("Sent", messageToRFC822Email(message)),
+      await imap.append(global.sentfoldername, messageToRFC822Email(message)),
     ]);
+    //console.dir({ emailinfo, imapinfo }, { depth: null });
 
     return { sent: true, error: null };
   } catch (error) {

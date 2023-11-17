@@ -10,9 +10,20 @@ const RenameFile = promisify(fs.rename);
 const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
 
+function getJsonFiles(dir) {
+  const files = fs.readdirSync(dir);
+  return files.filter(
+    (file) =>
+      path.extname(file).toLowerCase() === ".json" && path.basename(file, ".json").toLowerCase() != "backup"
+  );
+}
+
 const getConfig = () => {
-  const AUTH_PATH = path.resolve("../settings/config.json");
-  const auth = JSON.parse(fs.readFileSync(AUTH_PATH));
+  const AUTH_PATH = path.resolve("../settings");
+  const configFiles = getJsonFiles(AUTH_PATH);
+  //console.log(configFiles);
+  const configFile = path.join("../settings/", configFiles[0]);
+  const auth = JSON.parse(fs.readFileSync(configFile));
   return auth;
 };
 
@@ -20,7 +31,6 @@ const setBackup = async (backup) => {
   const BACKUP_PATH = path.resolve("../settings/backup.json");
   await WriteFile(BACKUP_PATH, JSON.stringify(backup));
 };
-
 const getBackup = async () => {
   const BACKUP_PATH = path.resolve("../settings/backup.json");
   const backup = JSON.parse(fs.readFileSync(BACKUP_PATH));
