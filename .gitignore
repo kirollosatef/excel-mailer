@@ -4,3 +4,4 @@ settings/config.json
 settings/backup.json
 data/*.xlsx
 report.txt
+app.exe
