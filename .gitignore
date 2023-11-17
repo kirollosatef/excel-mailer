@@ -1,3 +1,6 @@
 code/node_modules
 code/package-lock.json
-setting/config.json
+settings/config.json
+settings/backup.json
+data/*.xlsx
+./*.txt
