@@ -40,7 +40,7 @@ async function main() {
     global.auth = auth;
     global.waitInterval = waitInterval;
     var transporter = nodemailer.createTransport(auth);
-    var imap = new ImapFlow({ ...auth, port: 993, logger: false });
+    var imap = new ImapFlow({ ...auth, port: 993, logger: true });
     await imap.connect();
   } catch (error) {
     console.log(error);

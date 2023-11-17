@@ -1,15 +1,15 @@
 {
   "auth": {
-    "host": "mail.vscl.com.sa",
+    "host": "mail.alkhabeer4coll.com",
     "port": 465,
     "secure": true,
     "auth": {
-      "user": "salam@vscl.com.sa",
-      "pass": "VSCL@2024"
+      "user": "noreply@alkhabeer4coll.com",
+      "pass": "NoReply@123123"
     },
     "tls": {
       "rejectUnauthorized": false
     }
   },
-  "waitInterval": 36000
+  "waitInterval": 1000
 }
