@@ -2,6 +2,6 @@
 title Excel Mailer By Eng Islam Younes !!!
 rem mode 60,30
 
-cd app
-call app.exe
+cd code
+call npm start
 pause
