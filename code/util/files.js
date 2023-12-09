@@ -49,6 +49,21 @@ async function listDatabase(dir) {
   return files;
 }
 
+async function listAttachments(serviceid,dir) {
+  try {
+    const files = await readdir(dir);
+
+    // Filter files based on the serviceid in their names
+    const filteredFiles = files.filter(file => {
+      const fileName = path.parse(file).name; // Get the file name without extension
+      return fileName.includes(serviceid);
+    });
+    return filteredFiles;
+  } catch (error) {
+
+    return [];
+  }
+}
 module.exports = {
   getConfig,
   setBackup,
@@ -60,4 +75,5 @@ module.exports = {
   writeJSON,
   RemoveFile,
   RenameFile,
+  listAttachments,
 };

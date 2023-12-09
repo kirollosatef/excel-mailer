@@ -13,6 +13,7 @@ const {
   getBackup,
   RemoveFile,
   WriteFile,
+  listAttachments,
 } = require("./util/files");
 const { logger } = require("./util/terminal");
 const {
@@ -22,6 +23,7 @@ const {
   secondsToHms,
   messageToRFC822Email,
 } = require("./util/misc");
+const { log } = require("node:console");
 
 const TEMP_PATH = path.resolve("../template");
 const DATA_PATH = path.resolve("../data");
@@ -104,16 +106,16 @@ async function getData() {
   //filter
   xlData = xlData.filter((e) => e.Email != " ");
 
-  const valid = xlData.filter(
-    (obj) =>
-      obj["الاسم"] &&
-      obj["رقم الخدمة"] &&
-      obj[" مبلغ المديونية "] &&
-      obj["رقم حساب سداد"] &&
-      obj["تاريخ تفعيل الخدمة"] &&
-      obj.Email &&
-      validateEmail(obj.Email)
-  );
+  // const valid = xlData.filter(
+  //   (obj) =>
+  //     obj["الاسم"] &&
+  //     obj["رقم الخدمة"] &&
+  //     obj[" مبلغ المديونية "] &&
+  //     obj["رقم حساب سداد"] &&
+  //     obj["تاريخ تفعيل الخدمة"] &&
+  //     obj.Email &&
+  //     validateEmail(obj.Email)
+  // );
 
   /*   const notvalid = xlData.reduce((acc, obj) => {
     if (
@@ -129,7 +131,12 @@ async function getData() {
     return acc;
   }, []); */
 
-  const filteredData = valid.map((obj) => ({
+
+  const filteredData = xlData.map((obj) => {
+    const additionalData = { ...obj };
+  
+    return {
+      ...additionalData,
     name: obj["الاسم"],
     serviceid: obj["رقم الخدمة"],
     amount: Number(obj[" مبلغ المديونية "]).toFixed(2),
@@ -139,7 +146,8 @@ async function getData() {
     processed: false,
     sent: false,
     errormsg: null,
-  }));
+    };
+  });
 
   logger(`Emails Found: ${filteredData.length}`, "mag");
 
@@ -159,13 +167,14 @@ async function getTemplate() {
   }
 }
 
-function subHTML(name, serviceid, amount, sadad, date) {
+function subHTML(dataObj) {
   let data = global.template;
-  data = data.replaceAll("[NAME]", name);
-  data = data.replaceAll("[SERVICEID]", serviceid);
-  data = data.replaceAll("[AMOUNT]", amount);
-  data = data.replaceAll("[SADAD]", sadad);
-  data = data.replaceAll("[DATE]", date);
+
+  for (const [key, value] of Object.entries(dataObj)) {
+    const placeholder = `[${key.toUpperCase()}]`;
+    data = data.replaceAll(placeholder, value);
+  }
+
   return data;
 }
 
@@ -181,12 +190,23 @@ async function Mailer(transporter, imap, data) {
   });
 
   for await (const [index, emaildata] of data.entries()) {
-    let { name, serviceid, amount, sadad, date, email, processed } = emaildata;
-    if (!processed) {
-      const html = subHTML(name, serviceid, amount, sadad, date);
+    let dataToSend = emaildata;
+    let attatchments = [];
+    const attachmentsPath = path.resolve("../attatchments");
+    const attachments = await listAttachments(dataToSend.serviceid,attachmentsPath);
+    console.log(attachments);
+    for (const file of attachments) {
+      attatchments.push({
+        filename: file,
+        path: path.join(attachmentsPath, file),
+      });
+    }
+    if (!dataToSend.processed) {
+      const html = subHTML(dataToSend);
       const { sent, error } = await sendMail(transporter, imap, {
-        to: email,
+        to: dataToSend.email,
         html,
+        attatchments
       });
       //backup
       data[index].sent = sent;
@@ -196,11 +216,11 @@ async function Mailer(transporter, imap, data) {
 
       await Sleep(global.waitInterval);
     }
-    bar.tick({ email: email });
+    bar.tick({ email: dataToSend.email });
   }
 }
 
-async function sendMail(transporter, imap, { to, html }) {
+async function sendMail(transporter, imap, { to, html, attatchments }) {
   try {
     const message = {
       from: `"${global.username}" <${global.auth.auth.user}>`,
@@ -208,6 +228,7 @@ async function sendMail(transporter, imap, { to, html }) {
       subject: global.subject,
       text: null,
       html,
+      attachments: attatchments
     };
 
     const [emailinfo, imapinfo] = await Promise.all([
