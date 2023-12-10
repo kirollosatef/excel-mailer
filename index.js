@@ -103,51 +103,38 @@ async function getData() {
   const sheet_name_list = workbook.SheetNames;
   let xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
   logger(`Excel File: ${datafile}`);
-  //filter
-  xlData = xlData.filter((e) => e.Email != " ");
 
-  // const valid = xlData.filter(
-  //   (obj) =>
-  //     obj["الاسم"] &&
-  //     obj["رقم الخدمة"] &&
-  //     obj[" مبلغ المديونية "] &&
-  //     obj["رقم حساب سداد"] &&
-  //     obj["تاريخ تفعيل الخدمة"] &&
-  //     obj.Email &&
-  //     validateEmail(obj.Email)
-  // );
+  xlData = xlData.filter((e) => e.email != " ");
 
-  /*   const notvalid = xlData.reduce((acc, obj) => {
-    if (
-      !obj["الاسم"] ||
-      !obj["رقم الخدمة"] ||
-      !obj[" مبلغ المديونية "] ||
-      !obj["رقم حساب سداد"] ||
-      !obj["تاريخ تفعيل الخدمة"] ||
-      !obj.Email
-    ) {
-      acc.push(obj);
-    }
-    return acc;
-  }, []); */
+  if (xlData.length === 0) {
+    logger("No Emails Found", "red");
+    process.exit(1);
+  }
 
+  let invalidEmails = [];
 
   const filteredData = xlData.map((obj) => {
-    const additionalData = { ...obj };
-  
+    // for each key in data make the make the key is the
+
+    if (!validateEmail(obj.email)) {
+      invalidEmails.push(obj.email);
+      return null;
+    }
+
     return {
-      ...additionalData,
-    name: obj["الاسم"],
-    serviceid: obj["رقم الخدمة"],
-    amount: Number(obj[" مبلغ المديونية "]).toFixed(2),
-    sadad: obj["رقم حساب سداد"],
-    date: excelDateToJSDate(obj["تاريخ تفعيل الخدمة"]),
-    email: obj.Email,
-    processed: false,
-    sent: false,
-    errormsg: null,
+      email: obj.email,
+      serviceid: obj.serviceid,
+      ...obj,
+      processed: false,
+      sent: false,
+      errormsg: null,
     };
   });
+
+  if (invalidEmails.length > 0) {
+    logger(`Invalid Emails Found: ${invalidEmails.length}`, "red");
+    logger(invalidEmails);
+  }
 
   logger(`Emails Found: ${filteredData.length}`, "mag");
 
@@ -193,7 +180,7 @@ async function Mailer(transporter, imap, data) {
     let dataToSend = emaildata;
     let attatchments = [];
     const attachmentsPath = path.resolve("../attatchments");
-    const attachments = await listAttachments(dataToSend.serviceid,attachmentsPath);
+    const attachments = await listAttachments(dataToSend.serviceid, attachmentsPath);
     console.log(attachments);
     for (const file of attachments) {
       attatchments.push({
@@ -206,7 +193,7 @@ async function Mailer(transporter, imap, data) {
       const { sent, error } = await sendMail(transporter, imap, {
         to: dataToSend.email,
         html,
-        attatchments
+        attatchments,
       });
       //backup
       data[index].sent = sent;
@@ -228,7 +215,7 @@ async function sendMail(transporter, imap, { to, html, attatchments }) {
       subject: global.subject,
       text: null,
       html,
-      attachments: attatchments
+      attachments: attatchments,
     };
 
     const [emailinfo, imapinfo] = await Promise.all([

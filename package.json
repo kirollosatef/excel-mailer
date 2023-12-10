@@ -14,7 +14,8 @@
   },
   "scripts": {
     "release:build": "pkg --output ../app .",
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",

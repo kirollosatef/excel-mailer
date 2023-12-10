@@ -16,7 +16,7 @@ function secondsToHms(d) {
 }
 
 function excelDateToJSDate(date) {
-  return new Date(Date.UTC(0, 0, date - 1)).toISOString().substring(0, 10);
+  return date;
 }
 
 function validateEmail(email) {
